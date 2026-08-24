@@ -1,0 +1,12 @@
+{
+  "frontend": {
+    "id": "CHA-112",
+    "issueId": "CHA-112",
+    "url": "https://linear.app/chatush/issue/CHA-112/profile-page-frontend-implementation"
+  },
+  "qa": {
+    "id": "CHA-113",
+    "issueId": "CHA-113",
+    "url": "https://linear.app/chatush/issue/CHA-113/profile-page-qa-e2e-validation"
+  }
+}

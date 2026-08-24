@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: Pixa API contract
+  version: 0.1.0
+  description: >-
+    The shape a future backend must implement for the UI built so far. Nothing
+    implements this yet - the current phase is frontend-only against the mock
+    layer in frontend/src/mock/seed.ts. Schemas here mirror
+    frontend/src/types/social.ts and the ApiContract type in that file; keep the
+    two in step.
+servers:
+  - url: /api
+    description: Same-origin API root
+
+paths:
+  /user/{username}:
+    get:
+      summary: Read a profile
+      description: >-
+        Backs the profile page (CHA-112). Returns the profile subject plus the
+        viewer-relative isFollowing flag. postCount, followersCount and
+        followingCount are server-derived; the UI renders the post count from
+        the returned post list so a freshly created post is reflected without a
+        refetch.
+      operationId: getUser
+      tags: [user]
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /user/{username}/post:
+    get:
+      summary: List a user's posts, newest first
+      description: >-
+        Backs the profile Grid tab. Ordering is strictly reverse-chronological;
+        an empty item array is a valid response and renders the "No posts yet"
+        empty state. The Tagged tab has no endpoint - it renders a deliberate
+        empty state until a tagged-post model exists.
+      operationId: listUserPost
+      tags: [user, post]
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: One page of the user's posts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /follow:
+    post:
+      summary: Toggle following the target user
+      description: >-
+        Backs the Follow / Following control on another user's profile. The
+        response carries the target's updated follower count so the button state
+        and the counter move in one interaction (AC6).
+      operationId: toggleFollow
+      tags: [follow]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetUserId]
+              properties:
+                targetUserId:
+                  type: string
+      responses:
+        "200":
+          description: The resulting follow state
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [targetUserId, isFollowing, followersCount]
+                properties:
+                  targetUserId:
+                    type: string
+                  isFollowing:
+                    type: boolean
+                  followersCount:
+                    type: integer
+                    minimum: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  responses:
+    Unauthorized:
+      description: No valid session. The UI redirects to the auth view with a toast (AC1).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: No such user
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+
+  schemas:
+    Error:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          description: Surfaced to the user as a sonner toast (AC8).
+
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - name
+        - avatarUrl
+        - bio
+        - followersCount
+        - followingCount
+        - postCount
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        name:
+          type: string
+        avatarUrl:
+          type: string
+          format: uri
+        bio:
+          type: string
+        followersCount:
+          type: integer
+          minimum: 0
+        followingCount:
+          type: integer
+          minimum: 0
+        postCount:
+          type: integer
+          minimum: 0
+        isFollowing:
+          type: boolean
+          description: Relative to the authenticated viewer. Absent on one's own profile.
+
+    Post:
+      type: object
+      required:
+        - id
+        - userId
+        - imageUrl
+        - caption
+        - likeCount
+        - commentCount
+        - createdAt
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+        caption:
+          type: string
+        likeCount:
+          type: integer
+          minimum: 0
+        commentCount:
+          type: integer
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+        isLiked:
+          type: boolean
+          description: Relative to the authenticated viewer.
+
+    FeedPage:
+      type: object
+      required: [item, nextCursor]
+      properties:
+        item:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        nextCursor:
+          type: string
+          nullable: true

@@ -2,7 +2,7 @@
 
 A structured workspace for running an AI-driven product development loop.
 
-This repository holds the source-of-truth instructions, product docs, planning artifacts, and orchestration outputs used to build a frontend-first social app MVP through specialized agents.
+This repository holds the source-of-truth instructions, product docs, planning artifacts, and orchestration outputs used to build a frontend-first AI Code Reviewer & Quality Dashboard MVP through specialized agents.
 
 ## What this repository is
 
@@ -12,7 +12,7 @@ This repository holds the source-of-truth instructions, product docs, planning a
 
 ## Current project focus
 
-- Product: Instagram-style social app MVP
+- Product: AI Code Reviewer & Quality Dashboard MVP
 - Scope: Frontend-first, mock-data-driven user journeys
 - Delivery model: Orchestrator -> Frontend/Backend (when needed) -> QA
 
@@ -77,7 +77,7 @@ See the product definition in .doc/product-definition.md.
 - Repository default branch: main
 - Architecture doc: scaffolded and ready for deeper detail
 - Product definition: present with acceptance criteria and success metrics
-- Backlog: active, with profile and exploration tasks tracked
+- Backlog: active, with code submission and review dashboard tasks tracked
 
 ## License
 

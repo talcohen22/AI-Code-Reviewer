@@ -10,17 +10,13 @@ backend agent unless a task is marked `stack:full` or a `backend/` directory exi
 See `.doc/product-definition.md` for the acceptance criteria QA checks against.
 
 Current queue:
-- [ ] profile page | figma:https://www.figma.com/design/n16ZPecWb35xpvNomre6zu/Instagram-UI-Screens--Community-?node-id=0-2662&m=dev
-
-- [ ] post detail view with comments
-- [ ] explore / search users by username
-- [ ] followers and following list on profile
+- [ ] auth views and simulated session (signup / login / logout)
+- [ ] code submission view with Monaco editor and mock review pipeline
+- [ ] review results view (Style / Bugs / Security / Refactor Suggestions / Generated Tests)
+- [ ] severity filtering on review results
+- [ ] quality dashboard with review history
 
 
 
 
 ## DONE
-- [x] Pixel perfect the visual design | figma:https://www.figma.com/design/n16ZPecWb35xpvNomre6zu/Instagram-UI-Screens--Community-?node-id=0-1646&m=dev
-- [x] feed, profile, notifications and auth views (see .plan/001-2026-07-01-instagram-clone.md)
-
-

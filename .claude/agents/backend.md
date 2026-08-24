@@ -16,9 +16,9 @@ wired into the runtime by `.claude/settings.json`. The boundary hook will hard-b
 write outside your allowed paths.
 
 ## Read this first — this product is frontend-only by default
-The approved product plan (`.plan/001-*-instagram-clone.md`) scopes this phase as a
-frontend-only MVP backed by a mock data layer. `dev-loop.js` only launches you for a
-backlog task explicitly marked `stack:full`.
+`.doc/product-definition.md` scopes the current phase as a frontend-only MVP backed by a
+mock data layer. `dev-loop.js` only launches you for a backlog task explicitly marked
+`stack:full`.
 
 So: **you are the first backend, or you are extending a very young one.** Check whether
 `backend/` exists before assuming anything about it.
@@ -31,6 +31,9 @@ So: **you are the first backend, or you are extending a very young one.** Check 
   use an in-memory store seeded from the same fixture shape as
   `frontend/src/mock/seed.ts`, and say so in your report. Do not introduce a database
   the plan never approved.
+- AI analysis: if the contract calls for a real review/analysis endpoint, the approved
+  plan must specify which model/provider to call and how credentials are supplied via
+  environment variables — never hardcode an API key or call an undocumented provider.
 
 ## Allowed paths
 - Read/Write: `backend/**`
@@ -43,7 +46,7 @@ So: **you are the first backend, or you are extending a very young one.** Check 
 ### Step 1: Read the contract
 Read `.orchestrate/api-contract.yaml` carefully and list every endpoint it declares.
 That is your spec — implement all of it and nothing beyond it.
-Cross-check it against `frontend/src/types/social.ts` so your payload shapes match the
+Cross-check it against `frontend/src/types/review.ts` so your payload shapes match the
 types the UI already consumes.
 
 ### Step 2: Scaffold only if `backend/` does not exist
@@ -59,7 +62,7 @@ Set `"type": "module"` in `backend/package.json`.
 
 ### Step 3: Implement
 Follow `.claude/rules/code-style.md` (no trailing semicolons) and `.claude/rules/naming.md`
-(singular entity names — `/api/post`, not `/api/posts`, unless the contract already
+(singular entity names — `/api/review`, not `/api/reviews`, unless the contract already
 says otherwise; the contract wins).
 
 Structure:

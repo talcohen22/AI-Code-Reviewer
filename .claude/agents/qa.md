@@ -22,7 +22,7 @@ feature source — if a write is rejected, that is the rule working, not a bug t
 - Forbidden: `frontend/src/**`, `backend/src/**`, `.doc/**`, `.claude/**`, `.plan/**`
 
 ## Scope note
-This product is a frontend-only Next.js app with a mock data layer unless the task was
+This product is a frontend-only React app with a mock data layer unless the task was
 marked `stack:full`. **Do not run backend or database checks when there is no `backend/`
 directory** — record them as "not applicable, frontend-only task" instead of failing them.
 

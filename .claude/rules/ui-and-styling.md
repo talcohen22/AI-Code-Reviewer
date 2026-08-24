@@ -6,16 +6,15 @@
   across features.
 
 ## Styling engine
-`frontend/` is styled with **Tailwind CSS v4** (via `@tailwindcss/postcss`),
-with a single `globals.css`. Use utility classes. Do not add new `.css` files
-and do not use inline styles.
+`frontend/` is styled with **MUI** (`@mui/material` + `@emotion/react` +
+`@emotion/styled`). Use MUI components and the `sx` prop / `styled()` API.
+Do not add new `.css` files and do not use inline `style={}` props.
 
 ## Design tokens
-- Prefer CSS variables for colors, spacing, sizing, and other shared tokens.
-- Declare tokens in `:root` in `globals.css` and expose them to utilities via
-  `@theme inline`.
-- Use nested CSS only where it improves scoping and readability.
-
-> Resolves Q3 of `.plan/002-2026-08-03-pixel-perfect-the-visual-design.md`: the
-> former `main.css` / `setup` / `basics` / `cmps` structure predated this Tailwind
-> setup and no longer applies. The token intent above is what survives from it.
+- Declare shared tokens (palette, typography, spacing, shape) in a single MUI
+  theme created with `createTheme()` in `frontend/src/theme.ts`, and provide it
+  once via `<ThemeProvider theme={theme}>` at the app root.
+- Reference theme tokens (`theme.palette.*`, `theme.spacing()`, etc.) from the
+  `sx` prop rather than hardcoding colors or spacing values.
+- Use `styled()` only where a component needs styling that would be unwieldy
+  inline in `sx` — keep it colocated with the component it styles.

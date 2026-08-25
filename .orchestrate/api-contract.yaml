@@ -1,130 +1,112 @@
 openapi: 3.0.3
 info:
-  title: Pixa API contract
+  title: AI Code Reviewer API contract
   version: 0.1.0
   description: >-
-    The shape a future backend must implement for the UI built so far. Nothing
-    implements this yet - the current phase is frontend-only against the mock
-    layer in frontend/src/mock/seed.ts. Schemas here mirror
-    frontend/src/types/social.ts and the ApiContract type in that file; keep the
-    two in step.
+    The shape a future AI-analysis backend must implement for the UI built so
+    far. Nothing implements this yet - the current phase is frontend-only
+    against the mock layer in frontend/src/mock/seed.ts, where runReview stands
+    in for POST /api/review and the session's React state stands in for GET
+    /api/review. Schemas here mirror frontend/src/types/review.ts and the
+    ApiContract type in that file; keep the two in step. Array-valued fields
+    stay singular per .claude/rules/naming.md. There is no account system in
+    this phase, so no endpoint here is authenticated and review history is
+    session-scoped rather than user-scoped.
 servers:
   - url: /api
     description: Same-origin API root
 
 paths:
-  /user/{username}:
-    get:
-      summary: Read a profile
-      description: >-
-        Backs the profile page (CHA-112). Returns the profile subject plus the
-        viewer-relative isFollowing flag. postCount, followersCount and
-        followingCount are server-derived; the UI renders the post count from
-        the returned post list so a freshly created post is reflected without a
-        refetch.
-      operationId: getUser
-      tags: [user]
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /user/{username}/post:
-    get:
-      summary: List a user's posts, newest first
-      description: >-
-        Backs the profile Grid tab. Ordering is strictly reverse-chronological;
-        an empty item array is a valid response and renders the "No posts yet"
-        empty state. The Tagged tab has no endpoint - it renders a deliberate
-        empty state until a tagged-post model exists.
-      operationId: listUserPost
-      tags: [user, post]
-      parameters:
-        - name: username
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: cursor
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: One page of the user's posts
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/FeedPage"
-        "401":
-          $ref: "#/components/responses/Unauthorized"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /follow:
+  /review:
     post:
-      summary: Toggle following the target user
+      summary: Run a review over a snippet or a single GitHub file
       description: >-
-        Backs the Follow / Following control on another user's profile. The
-        response carries the target's updated follower count so the button state
-        and the counter move in one interaction (AC6).
-      operationId: toggleFollow
-      tags: [follow]
+        Backs the code submission view. The client sends either pasted code or
+        the contents it imported for a GitHub file link, and the response is the
+        completed review the results view renders (AC1, AC2, AC3). The UI
+        navigates to /review/{id} on success and surfaces `message` from an
+        error response as a sonner toast (AC7). The mock layer answers this in
+        ~700ms so the loading state is real; a backend running a model will be
+        slower, and the UI's loading state already covers that.
+      operationId: createReview
+      tags: [review]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [targetUserId]
-              properties:
-                targetUserId:
-                  type: string
+              $ref: "#/components/schemas/ReviewRequest"
       responses:
-        "200":
-          description: The resulting follow state
+        "201":
+          description: The completed review
           content:
             application/json:
               schema:
-                type: object
-                required: [targetUserId, isFollowing, followersCount]
-                properties:
-                  targetUserId:
-                    type: string
-                  isFollowing:
-                    type: boolean
-                  followersCount:
-                    type: integer
-                    minimum: 0
-        "401":
-          $ref: "#/components/responses/Unauthorized"
+                $ref: "#/components/schemas/Review"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "413":
+          $ref: "#/components/responses/TooLarge"
+    get:
+      summary: List this session's reviews, newest first
+      description: >-
+        Backs the quality dashboard (AC6). Ordering is strictly
+        reverse-chronological by createdAt. An empty item array is a valid
+        response and renders the "No reviews yet" empty state (AC7).
+      operationId: listReview
+      tags: [review]
+      responses:
+        "200":
+          description: One page of past reviews
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+
+  /review/{id}:
+    get:
+      summary: Read one review
+      description: >-
+        Backs a direct visit to /review/{id}. While history is session-scoped
+        and in-memory, the UI resolves the id locally and falls back to an empty
+        state when it is unknown; a backend implementing this endpoint makes a
+        review link durable.
+      operationId: getReview
+      tags: [review]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
         "404":
           $ref: "#/components/responses/NotFound"
 
 components:
   responses:
-    Unauthorized:
-      description: No valid session. The UI redirects to the auth view with a toast (AC1).
+    BadRequest:
+      description: >-
+        The submission was empty, or a supplied githubUrl was not a
+        github.com/{owner}/{repo}/blob/{branch}/{path} file link (AC2).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    TooLarge:
+      description: The snippet exceeded the 20,000 character limit.
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/Error"
     NotFound:
-      description: No such user
+      description: No such review
       content:
         application/json:
           schema:
@@ -137,85 +119,174 @@ components:
       properties:
         message:
           type: string
-          description: Surfaced to the user as a sonner toast (AC8).
+          description: Surfaced to the user as a sonner toast (AC7).
 
-    User:
+    Severity:
+      type: string
+      enum: [critical, warning, info]
+
+    FindingCategory:
+      type: string
+      description: The buckets the results view groups findings into (AC3).
+      enum: [style, bug, security, refactor]
+
+    ReviewSource:
+      type: string
+      enum: [paste, github]
+
+    ReviewRequest:
       type: object
-      required:
-        - id
-        - username
-        - name
-        - avatarUrl
-        - bio
-        - followersCount
-        - followingCount
-        - postCount
+      required: [source, code, file, language]
+      properties:
+        source:
+          $ref: "#/components/schemas/ReviewSource"
+        code:
+          type: string
+          maxLength: 20000
+          description: The code to review. Must not be blank.
+        file:
+          type: string
+          description: >-
+            The GitHub path for an imported file, or a stand-in name such as
+            snippet.ts for a pasted snippet. Findings reference it.
+        language:
+          type: string
+          description: Monaco language id, e.g. typescript.
+        githubUrl:
+          type: string
+          description: Present only when source is "github".
+
+    Finding:
+      type: object
+      required: [id, category, severity, title, description, file, line, suggestion]
       properties:
         id:
           type: string
-        username:
+        category:
+          $ref: "#/components/schemas/FindingCategory"
+        severity:
+          $ref: "#/components/schemas/Severity"
+        title:
           type: string
-        name:
+        description:
           type: string
-        avatarUrl:
+        file:
           type: string
-          format: uri
-        bio:
-          type: string
-        followersCount:
+        line:
           type: integer
-          minimum: 0
-        followingCount:
-          type: integer
-          minimum: 0
-        postCount:
-          type: integer
-          minimum: 0
-        isFollowing:
-          type: boolean
-          description: Relative to the authenticated viewer. Absent on one's own profile.
+          minimum: 1
+          description: 1-based line number inside `file`.
+        suggestion:
+          type: string
 
-    Post:
+    GeneratedTest:
+      type: object
+      description: One test per reviewed function (AC5).
+      required: [id, functionName, framework, code]
+      properties:
+        id:
+          type: string
+        functionName:
+          type: string
+        framework:
+          type: string
+          description: Test framework the snippet is written for, e.g. vitest.
+        code:
+          type: string
+
+    ReviewSummary:
+      type: object
+      description: >-
+        Precomputed counts the dashboard renders per row (AC6). style + bug +
+        security + refactor equals total, as does critical + warning + info.
+      required:
+        - style
+        - bug
+        - security
+        - refactor
+        - generatedTest
+        - critical
+        - warning
+        - info
+        - total
+      properties:
+        style:
+          type: integer
+          minimum: 0
+        bug:
+          type: integer
+          minimum: 0
+        security:
+          type: integer
+          minimum: 0
+        refactor:
+          type: integer
+          minimum: 0
+        generatedTest:
+          type: integer
+          minimum: 0
+        critical:
+          type: integer
+          minimum: 0
+        warning:
+          type: integer
+          minimum: 0
+        info:
+          type: integer
+          minimum: 0
+        total:
+          type: integer
+          minimum: 0
+
+    Review:
       type: object
       required:
         - id
-        - userId
-        - imageUrl
-        - caption
-        - likeCount
-        - commentCount
+        - source
+        - sourceLabel
+        - file
+        - language
+        - code
         - createdAt
+        - finding
+        - generatedTest
+        - summary
       properties:
         id:
           type: string
-        userId:
+        source:
+          $ref: "#/components/schemas/ReviewSource"
+        sourceLabel:
           type: string
-        imageUrl:
+          description: >-
+            Human-readable origin - "Pasted snippet", or the GitHub file path.
+        file:
           type: string
-          format: uri
-        caption:
+        language:
           type: string
-        likeCount:
-          type: integer
-          minimum: 0
-        commentCount:
-          type: integer
-          minimum: 0
+        code:
+          type: string
+          description: The reviewed code, echoed back so a review renders standalone.
         createdAt:
           type: string
           format: date-time
-        isLiked:
-          type: boolean
-          description: Relative to the authenticated viewer.
+        finding:
+          type: array
+          items:
+            $ref: "#/components/schemas/Finding"
+        generatedTest:
+          type: array
+          items:
+            $ref: "#/components/schemas/GeneratedTest"
+        summary:
+          $ref: "#/components/schemas/ReviewSummary"
 
-    FeedPage:
+    ReviewListResponse:
       type: object
-      required: [item, nextCursor]
+      required: [item]
       properties:
         item:
           type: array
+          description: Reviews, newest first.
           items:
-            $ref: "#/components/schemas/Post"
-        nextCursor:
-          type: string
-          nullable: true
+            $ref: "#/components/schemas/Review"

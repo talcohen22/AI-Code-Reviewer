@@ -10,7 +10,6 @@ backend agent unless a task is marked `stack:full` or a `backend/` directory exi
 See `.doc/product-definition.md` for the acceptance criteria QA checks against.
 
 Current queue:
-- [ ] auth views and simulated session (signup / login / logout)
 - [ ] code submission view with Monaco editor and mock review pipeline
 - [ ] review results view (Style / Bugs / Security / Refactor Suggestions / Generated Tests)
 - [ ] severity filtering on review results
